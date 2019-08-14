@@ -5,11 +5,11 @@ class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
 {
   public function _getPassword($length = 8)
   {
-    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $str = '';
-    for ($p = 0; $p < $length; $p++) {
-      $str .= $characters[mt_rand(0, strlen($characters))];
-    }
+    $chars = Mage_Core_Helper_Data::CHARS_PASSWORD_LOWERS
+      . Mage_Core_Helper_Data::CHARS_PASSWORD_UPPERS
+      . Mage_Core_Helper_Data::CHARS_PASSWORD_DIGITS
+      . Mage_Core_Helper_Data::CHARS_PASSWORD_SPECIALS;
+    $str = Mage::helper('core')->getRandomString($length, $chars);
     return 'Gigya_' . $str;
   }
 
@@ -20,7 +20,7 @@ class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
       'siteUID' => $siteUid,
     );
     try {
-      $this->_gigya_api('notifyRegistration', $params);
+      $res = $this->_gigya_api('notifyRegistration', $params);
     }
     catch (Exception $e) {
       $code = $e->getCode();
@@ -76,8 +76,6 @@ class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
     );
     try {
       $res = $this->_gigya_api('deleteAccount', $params);
-      Mage::log($res);
-
     }
     catch (Exception $e) {
       $code = $e->getCode();
@@ -99,15 +97,35 @@ class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
    *   The Gigya response.
    */
   public function _gigya_api($method, $params) {
+    $data_center = Mage::getStoreConfig('gigya_global/gigya_global_conf/dataCenter');
+    $data_center = !empty($data_center) ? $data_center : NULL;
     $apiKey = Mage::getStoreConfig('gigya_global/gigya_global_conf/apikey');
     $secretkey = Mage::getStoreConfig('gigya_global/gigya_global_conf/secretkey');
     $request = new GSRequest($apiKey, $secretkey, 'socialize.' . $method);
+    if ($data_center !== NULL){
+      $request->setAPIDomain($data_center);
+    }
     $params['format'] = 'json';
     foreach ($params as $param => $val) {
       $request->setParam($param, $val);
     }
     try {
       $response = $request->send();
+      // If wrong data center resend to right one
+      if ($response->getErrorCode() == 301001){
+        $data = $response->getData();
+        $domain = $data->getString('apiDomain', NULL);
+        if ($domain !== NULL){
+          Mage::getModel('core/config')->saveConfig('gigya_global/gigya_global_conf/dataCenter', $domain);
+          $this->_gigya_api($method, $params);
+        } else {
+          $ex = new Exception("Bad apiDomain return");
+          throw $ex;
+        }
+      } elseif ($response->getErrorCode() !== 0){
+        $exp = new Exception($response->getErrorMessage(), $response->getErrorCode());
+        throw $exp;
+      }
     }
     catch (Exception $e) {
       $code = $e->getCode();
@@ -128,9 +146,13 @@ class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
         $config[$key] = ($value) ? true : false;
       }
     }
+    // New comments can be override in advanced config
+    if ($pluginName == 'gigya_comments/gigya_comments_conf') {
+      $config['version'] = 2;
+    }
     if (!empty($config['advancedConfig'])) {
       $advConfig = $this->_confStringToArry($config['advancedConfig']);
-      $config = $config + $advConfig;
+      $config = $advConfig + $config;
     }
     unset($config['advancedConfig']);
     if ($feed === TRUE) {
