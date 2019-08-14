@@ -78,7 +78,7 @@ class Gigya_Social_Model_Customer_Observer
     /*
      * Observer func for Magento customer_logout event
      * Handles log out from gigya when magento customer logs out
-     * @param $observer
+     * @param Varien_Event_Observer $observer
      */
     public function notify_logout($observer)
     {
@@ -95,6 +95,62 @@ class Gigya_Social_Model_Customer_Observer
             $params = array('UID' => $id);
             $this->helper->utils->call('accounts.logout', $params);
         }
+    }
+
+    /*
+     * @var Varien_Event_Observer
+     */
+    public function syncToGigya($observer)
+    {
+        if ("raas" == $this->userMod) {
+            $customer = $observer->getEvent()->getCustomer();
+            $attributes = $customer->getData();
+            $uid = $attributes['gigya_uid'];
+            $updater = new Gigya_Social_Helper_FieldMapping_GigyaUpdater($attributes, $uid);
+            $updater->updateGigya();
+        }
+    }
+
+    /*
+     * @var Varien_Event_Observer $observer
+     */
+    public function convertGenderFromGigya($observer)
+    {
+        if ("raas" == $this->userMod) {
+            /** @var Gigya_Social_Helper_FieldMapping_MagentoUpdater $updater */
+            $updater = $observer->getData("updater");
+            $gigyaAccount = $updater->getGigyaAccount();
+            $gigyaAccount['profile']['gender'] = $this->genderConvert("g2cms", null, $gigyaAccount['profile']['gender']);
+            $updater->setGigyaAccount($gigyaAccount);
+        }
+    }
+    
+    public function convertGenderToGigya($observer)
+    {
+        if ("raas" == $this->userMod) {
+            /** @var Gigya_Social_Helper_FieldMapping_GigyaUpdater $updater */
+            $updater = $observer->getData("updater");
+            $cmsArray = $updater->getCmsArray();
+            $cmsArray['gender'] = $this->genderConvert("cms2g", $cmsArray['gender'], null);
+            $updater->setCmsArray($cmsArray);
+        }
+    }
+
+    public function genderConvert($direction, $cmsVal, $gigyaVal)
+    {
+        $mapping = array(
+            "m" => 1,
+            "f" => 2,
+            "u" => 0
+        );
+        if ("g2cms" == $direction) {
+            return $mapping[$gigyaVal];
+        }
+        if ("cms2g" == $direction) {
+            $fliped = array_flip($mapping);
+            return $fliped[$cmsVal];
+        }
+        return null;
     }
 }
 

@@ -1,9 +1,9 @@
 {
     "name": "OpenMageModuleFostering/Gigya_Socialize",
     "type": "magento-module",
-    "license": "Gigya-License",
+    "license": "GPL",
     "homepage": "",
-    "description": "Create a completely social shopping experience with Gigya’s Magento Integration Cartridge",
+    "description": "Create a completely social shopping experience with Gigy's Magento Integration Cartridge",
     "authors": [
     {
         "name": "Yaniv Aran-Shamir",
