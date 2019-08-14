@@ -52,8 +52,7 @@ class GSRequest {
 	private $path;
 	private $traceLog = array();
 	protected $method;
-	#private $proxy = "localhost:8080";
-    private $proxy;
+	private $proxy;
 	private $proxyType = CURLPROXY_HTTP;
 	private $proxyUserPass = ":";
 	private $curlArray = array();

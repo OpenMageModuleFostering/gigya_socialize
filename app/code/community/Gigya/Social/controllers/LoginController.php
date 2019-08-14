@@ -1,5 +1,9 @@
 <?php
-include_once __DIR__ . '/../sdk/GSSDK.php';
+if (defined('COMPILER_INCLUDE_PATH')) {
+    include_once 'Gigya_Social_sdk_GSSDK.php';
+} else {
+    include_once 'Gigya/Social/sdk/GSSDK.php';
+}
 require_once('Mage/Customer/controllers/AccountController.php');
 
 /**
@@ -67,8 +71,8 @@ class Gigya_Social_LoginController extends Mage_Customer_AccountController
         $post = json_decode($req, TRUE);
         $this->getResponse()->setHeader('Content-type', 'application/json');
         if ($this->userMode === 'social') {
-            $this->_socialLogin($session, $post);
             $this->gigyaData = $post;
+            $this->_socialLogin($session, $post);
         } elseif ($this->userMode === 'raas') {
             $this->_raasLogin($session, $post);
         } else {

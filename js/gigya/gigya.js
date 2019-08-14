@@ -453,7 +453,8 @@ gigyaFunctions.RnR = function (settings) {
         scope: settings.scope,
         privacy: settings.privacy,
         onCommentSubmitted: gigyaFunctions.postReview,
-        userAction: ua
+        userAction: ua,
+        version: settings.version
     };
     gigya.comments.showRatingUI(settings);
     gigya.comments.showCommentsUI(reviews);
