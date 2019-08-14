@@ -6,7 +6,7 @@
  * Date: 5/29/16
  * Time: 4:47 PM
  */
-class Gigya_Social_Helper_FieldMapping_MagentoUpdater
+class Gigya_Social_Helper_FieldMapping_MagentoUpdater extends Gigya_Social_Helper_FieldMapping_Updater
 {
 
     private $gigyaAccount;
@@ -15,7 +15,7 @@ class Gigya_Social_Helper_FieldMapping_MagentoUpdater
      * @var bool
      */
     private $mapped = false;
-    private $path;
+    /** @var \Mage_Core_Model_Config_Element  */
 
     /**
      * Gigya_Social_Helper_FieldMapping_MagentoUpdater constructor.
@@ -25,8 +25,8 @@ class Gigya_Social_Helper_FieldMapping_MagentoUpdater
     public function __construct($gigyaAccount)
     {
         $this->gigyaAccount = $gigyaAccount;
-        $this->path         = (string) Mage::getConfig()->getNode("global/gigya/mapping_file");
-        $this->mapped       = ! empty($this->path);
+        $this->path         = Mage::getConfig()->getNode("global/gigya/mapping_file");
+        $this->mapped       = !empty($this->path);
     }
 
     /**
@@ -52,22 +52,18 @@ class Gigya_Social_Helper_FieldMapping_MagentoUpdater
      */
     public function isMapped()
     {
-        if (Mage::helper('Gigya_Social')->isDebug()) {
-            Mage::log("Field mapping is not enabled", Zend_Log::DEBUG, "gigya_debug_log");
+        if (!$this->mapped && Mage::helper('Gigya_Social')->isDebug()) {
+            Mage::log(
+                "Field mapping is not enabled", Zend_Log::DEBUG,
+                "gigya_debug_log"
+            );
         }
         return $this->mapped;
     }
 
     protected function retrieveFieldMappings()
     {
-        $mappingJson = file_get_contents($this->path);
-        if (false === $mappingJson) {
-            $err     = error_get_last();
-            $message = "Could not retrieve field mapping configuration file. message was:" . $err['message'];
-            Mage::log($message, Zend_Log::ERR);
-            throw new Exception("$message");
-        }
-        $conf               = new Gigya_Social_Helper_FieldMapping_Conf($mappingJson);
+        $conf = parent::retrieveFieldMappings();
         $this->gigyaMapping = $conf->getGigyaKeyed();
     }
 
@@ -80,8 +76,8 @@ class Gigya_Social_Helper_FieldMapping_MagentoUpdater
             /** @var Gigya_Social_Helper_FieldMapping_ConfItem $conf */
             $value = $this->getValueFromGigyaAccount($gigyaName);
             foreach ($confs as $conf) {
-                $mageKey   = $conf->getMagentoName();
-                $value       = $this->castValue($value, $conf);
+                $mageKey = $conf->getMagentoName();
+                $value   = $this->castValue($value, $conf);
                 $account->setData($mageKey, $value);
             }
         }
@@ -120,19 +116,23 @@ class Gigya_Social_Helper_FieldMapping_MagentoUpdater
                 } else {
                     $value = new Zend_Date($value);
                 }
-                $value = Mage::helper('core')->formatDate($value, Mage_Core_Model_Locale::FORMAT_TYPE_MEDIUM, false);
+                $value = Mage::helper('core')
+                    ->formatDate(
+                        $value, Mage_Core_Model_Locale::FORMAT_TYPE_MEDIUM,
+                        false
+                    );
                 break;
             case "decimal":
-                $value = (float) $value;
+                $value = (float)$value;
                 break;
             case "int":
-                $value = (int) $value;
+                $value = (int)$value;
                 break;
             case "text":
-                $value = (string) $value;
+                $value = (string)$value;
                 break;
             case "varchar":
-                $value = (string) $value;
+                $value = (string)$value;
                 break;
         }
 
@@ -186,7 +186,9 @@ class Gigya_Social_Helper_FieldMapping_MagentoUpdater
     {
         $this->gigyaMapping = $gigyaMapping;
     }
-    
-    
-    
+
+    protected function getCacheKey()
+    {
+        return get_class() . '_field_mappings';
+    }
 }

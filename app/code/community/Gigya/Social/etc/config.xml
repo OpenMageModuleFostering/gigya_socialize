@@ -2,7 +2,7 @@
 <config>
     <modules>
         <Gigya_Social>
-            <version>3.2.0</version>
+            <version>3.2.1</version>
         </Gigya_Social>
     </modules>
     <frontend>
@@ -42,6 +42,15 @@
                     </gigya_logout>
                 </observers>
             </customer_logout>
+            <customer_session_init>
+                <observers>
+                    <gigya_raas_relogin>
+                        <type>singleton</type>
+                        <class>Gigya_Social_Model_Customer_Observer</class>
+                        <method>reLoginToGigya</method>
+                    </gigya_raas_relogin>
+                </observers>
+            </customer_session_init>
             <checkout_cart_product_add_after>
                 <observers>
                     <gigya_share_action>
@@ -74,7 +83,7 @@
                     </gigya_reviewRemainder>
                 </observers>
             </checkout_onepage_controller_success_action>
-            <gigya_pre_filed_mapping>
+            <gigya_pre_field_mapping>
                 <observers>
                     <gender_convert>
                         <type>singleton</type>
@@ -82,7 +91,7 @@
                         <method>convertGenderFromGigya</method>
                     </gender_convert>
                 </observers>
-            </gigya_pre_filed_mapping>
+            </gigya_pre_field_mapping>
         </events>
         <routers>
             <gigyalogin>
@@ -292,6 +301,7 @@
                 <RegisterScreen>gigya-register-screen</RegisterScreen>
                 <ProfileWebScreen>Default-ProfileUpdate</ProfileWebScreen>
                 <override_links>1</override_links>
+                <session_lead>gigya</session_lead>
             </gigya_raas_conf>
         </gigya_login>
         <gigya_share>

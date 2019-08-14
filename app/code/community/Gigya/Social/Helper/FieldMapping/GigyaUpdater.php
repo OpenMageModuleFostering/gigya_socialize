@@ -6,14 +6,13 @@
  * Date: 5/26/16
  * Time: 2:05 PM
  */
-class Gigya_Social_Helper_FieldMapping_GigyaUpdater
+class Gigya_Social_Helper_FieldMapping_GigyaUpdater extends Gigya_Social_Helper_FieldMapping_Updater
 {
 
     private $magMappings;
     private $cmsArray;
     private $gigyaUid;
     private $mapped;
-    private $path;
     private $gigyaArray;
 
     /**
@@ -23,8 +22,8 @@ class Gigya_Social_Helper_FieldMapping_GigyaUpdater
     {
         $this->cmsArray = $cmsValuesArray;
         $this->gigyaUid = $gigyaUid;
-        $this->path     = (string) Mage::getConfig()->getNode("global/gigya/mapping_file");
-        $this->mapped   = ! empty($this->path);
+        $this->path     = Mage::getConfig()->getNode("global/gigya/mapping_file");
+        $this->mapped   = !empty($this->path);
 
     }
 
@@ -95,19 +94,9 @@ class Gigya_Social_Helper_FieldMapping_GigyaUpdater
         $this->gigyaArray = $gigyaArray;
     }
 
-    
-
-
     protected function retrieveFieldMappings()
     {
-        $mappingJson = file_get_contents($this->path);
-        if (false === $mappingJson) {
-            $err     = error_get_last();
-            $message = "Could not retrieve field mapping configuration file. message was:" . $err['message'];
-            Mage::log($message, Zend_Log::ERR);
-            throw new Exception("$message");
-        }
-        $conf              = new Gigya_Social_Helper_FieldMapping_Conf($mappingJson);
+        $conf              = parent::retrieveFieldMappings();
         $this->magMappings = $conf->getMagentoKeyed();
     }
 
@@ -116,11 +105,15 @@ class Gigya_Social_Helper_FieldMapping_GigyaUpdater
         $gigyaArray = array();
         foreach ($this->cmsArray as $key => $value) {
             /** @var Gigya_Social_Helper_FieldMapping_ConfItem $conf */
-            $confs = $this->magMappings[$key];
-            foreach ($confs as $conf) {
-                $value       = $this->castVal($value, $conf);
-                if (null != $value) {
-                    $this->assignArrayByPath($gigyaArray, $conf->getGigyaName(), $value);
+            if (isset($this->magMappings[$key])) {
+                $confs = $this->magMappings[$key];
+                foreach ($confs as $conf) {
+                    $value = $this->castVal($value, $conf);
+                    if (null != $value) {
+                        $this->assignArrayByPath(
+                            $gigyaArray, $conf->getGigyaName(), $value
+                        );
+                    }
                 }
             }
         }
@@ -134,7 +127,6 @@ class Gigya_Social_Helper_FieldMapping_GigyaUpdater
         $helper->updateGigyaUser($this->gigyaArray, $this->gigyaUid);
     }
 
-
     /**
      * @param mixed                                     $val
      * @param Gigya_Social_Helper_FieldMapping_ConfItem $conf
@@ -146,11 +138,11 @@ class Gigya_Social_Helper_FieldMapping_GigyaUpdater
     {
         switch ($conf->getGigyaType()) {
             case "string":
-                return (string) $val;
+                return (string)$val;
                 break;
             case "long";
             case "int":
-                return (int) $val;
+                return (int)$val;
                 break;
             case "bool":
                 if (is_string($val)) {
@@ -175,4 +167,8 @@ class Gigya_Social_Helper_FieldMapping_GigyaUpdater
         $arr = $value;
     }
 
+    protected function getCacheKey()
+    {
+        return get_class() . '_field_mappings';
+    }
 }
