@@ -1,12 +1,14 @@
 <?php
 
+
 if (defined('COMPILER_INCLUDE_PATH')) {
-    include_once 'Gigya_Social_sdk_GSSDK.php';
-    include_once 'Gigya_Social_sdk_gigyaCMS.php';
+  include_once 'Gigya_Social_sdk_GSSDK.php';
+  include_once 'Gigya_Social_sdk_gigyaCMS.php';
 } else {
-    include_once 'Gigya/Social/sdk/GSSDK.php';
-    include_once 'Gigya/Social/sdk/gigyaCMS.php';
+  include_once __DIR__ . '/../sdk/GSSDK.php';
+  include_once __DIR__ . '/../sdk/gigyaCMS.php';
 }
+
 
 class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
 {
@@ -84,10 +86,15 @@ class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
         }
     }
 
+    /*
+     * Logout user from Gigya
+     * called by notify_logout customer observer
+     * @param int $siteUid
+     */
     public function notifyLogout($siteUid)
     {
         $params = array(
-            'siteUID' => $siteUid,
+            'UID' => $siteUid,
         );
         try {
             $this->_gigya_api('logout', $params);
@@ -139,27 +146,44 @@ class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
         return $response;
     }
 
-    public function getPluginConfig($pluginName, $format = 'json', $feed = FALSE)
+  /**
+   * Return the store config for a plugin.
+   *
+   * @param string $pluginName (plugin configuration path)
+   * @param string $format
+   * @param bool $feed
+   *
+   * @return array/json
+   */
+  public function getPluginConfig($pluginName, $format = 'json', $feed = FALSE)
     {
         $config = Mage::getStoreConfig($pluginName);
+        //fix the magento yes/no as 1 or 0 so it would work in as true/false in javascript
         foreach ($config as $key => $value) {
-            //fix the magento yes/no as 1 or 0 so it would work in as true/false in javascript
             if ($value === '0' || $value === '1') {
                 $config[$key] = ($value) ? true : false;
             }
         }
-        // New comments can be override in advanced config
+        // New comments can be overridden in advanced config
         if ($pluginName == 'gigya_comments/gigya_comments_conf' || $pluginName = 'gigya_r_and_r/gigya_r_and_r_conf') {
             $config['version'] = 2;
         }
+        // Format advanced config
         if (!empty($config['advancedConfig'])) {
-            $advConfig = $this->_confStringToArry($config['advancedConfig']);
+            $isJson = $this->_advancedConfFormat($config['advancedConfig']); // is advanced conf in json or key|val format
+            if ($isJson) {
+                $advConfig = json_decode($config['advancedConfig'], true);
+            } else {
+                $advConfig = $this->_confStringToArry($config['advancedConfig']);
+            }
+            // unify boolean values
             foreach ($advConfig as $key => $val) {
                 $advConfig[$key] = $this->_string_to_bool($val);
             }
             $config = $advConfig + $config;
         }
         unset($config['advancedConfig']);
+        //
         if ($feed === TRUE) {
             $config['privacy'] = Mage::getStoreConfig('gigya_activityfeed/gigya_activityfeed_conf/privacy');
         }
@@ -167,6 +191,20 @@ class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
             return $config;
         }
         return Mage::helper('core')->jsonEncode($config);
+    }
+
+    /*
+     * Check advanced config format
+     * @param string $advancedConfig
+     * @return bool $json
+     */
+    protected function _advancedConfFormat($advancedConfig) {
+        if (substr($advancedConfig, 0, 1) === '{') {
+            $json = true;
+        } else {
+            $json = false;  // advanced config is in deprecated key|val format
+        }
+        return $json;
     }
 
     public function getPluginContainerID($pluginName)
@@ -199,6 +237,10 @@ class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
         return (bool) Mage::getStoreConfig('gigya_gamification/gigya_gamification_conf/purchaseAction');
     }
 
+    public function isFollowbarEnabled()
+    {
+        return (bool) Mage::getStoreConfig('gigya_followbar/gigya_followbar_conf/enable');
+    }
 
     public function getExtensionVersion()
     {
@@ -214,6 +256,11 @@ class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
 
     }
 
+    /*
+     * convert deprecated key|val advanced config format to ass array
+     * @param string $str
+     * @return array $lines
+     */
     public function _confStringToArry($str)
     {
         $lines = array();
@@ -245,4 +292,9 @@ class Gigya_Social_Helper_Data extends Mage_Core_Helper_Abstract
     public function  getUtils() {
         return $this->utils;
     }
+    public function getGigGlobalAdvancedConfig($advanced_config) {
+      $array = json_decode($advanced_config);
+      return $array;
+    }
+
 }

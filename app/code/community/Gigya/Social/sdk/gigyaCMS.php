@@ -1,5 +1,7 @@
 <?php
-
+if (defined('COMPILER_INCLUDE_PATH')) {
+  include_once 'Gigya_Social_sdk_GSSDK.php';
+}
 /**
  * Class GigyaCMS
  */
@@ -40,7 +42,6 @@ class GigyaCMS {
 	 *   The Gigya response.
 	 */
 	public function call( $method, $params, $trys = 0, $retrys = 0) {
-
 
 		// Initialize new request.
         if ($this->useUserKey) {
@@ -336,17 +337,18 @@ class GigyaCMS {
 		}
 	}
 
-    public function isApiKeyValid() {
+    public function testApiconfig() {
         $request = new GSRequest($this->api_key, $this->api_secret, 'shortenURL');
         $request->setAPIDomain($this->api_domain);
         $request->setParam('url', 'http://gigya.com');
         $response = $request->send();
         $error = $response->getErrorCode();
         if ($error != 0) {
-            return false;
+            return $error;
         }
-        return true;
+        return false;
     }
+
 
 /////////////////////////////////
 //            RaaS             //
@@ -699,6 +701,36 @@ class GigyaCMS {
         return $this->use_user_key;
     }
 
+	public function getCommentsCategoryInfo($catID)
+	{
+		$params = array(
+			"categoryID" => $catID,
+			"includeConfigSections" => "highlightSettings"
+		);
+		$catInfo = $this->call('comments.getCategoryInfo', $params);
 
+		return $catInfo;
+	}
+
+	/*
+	 * contact gigya to add verified purchaser badge to comment (Magento)
+	 *
+	 * @param string $categoryID
+	 * @param string $streamID
+	 * @param string $commentID
+	 *
+	 * @return bool $badge_added [statusCode,errorCode,statusReason,callId]
+	 */
+	public function addCommentCategoryHighlight( $categoryID, $streamID, $commentID )
+	{
+		$params = array(
+			"categoryID" => $categoryID,
+			"streamID" => $streamID,
+			"commentID" => $commentID,
+			"addHighlightGroups" => '["Verified-Purchaser"]' // this exact format only works. no error returned if this is wrong (5.2.2)
+		);
+		$response = $this->call('comments.updateComment', $params);
+		return $response;
+	}
 
 }

@@ -2,7 +2,7 @@
 <config>
   <modules>
     <Gigya_Social>
-      <version>3.0.0</version>
+      <version>3.1.0</version>
     </Gigya_Social>
   </modules>
   <frontend>
@@ -201,6 +201,9 @@
                     <gigya_r_and_r>
                       <title>Gigya Rating &amp; Reviews configuration</title>
                     </gigya_r_and_r>
+                      <gigya_followbar>
+                          <title>Gigya Followbar configuration</title>
+                      </gigya_followbar>
                   </children>
                 </config>
               </children>
@@ -250,12 +253,12 @@
         <showEditLink>1</showEditLink>
       </gigya_link_accounts>
 			<gigya_raas_conf>
-				<WebScreen>Login-web</WebScreen>
-				<MobileScreen>Mobile-login</MobileScreen>
+				<WebScreen>Default-RegistrationLogin</WebScreen>
+				<MobileScreen>DefaultMobile-RegistrationLogin</MobileScreen>
 				<LoginScreen>gigya-login-screen</LoginScreen>
 				<RegisterScreen>gigya-register-screen</RegisterScreen>
-				<ProfileWebScreen>Profile-web</ProfileWebScreen>
-				<ProfileMobileScreen>Mobile-profile</ProfileMobileScreen>
+				<ProfileWebScreen>Default-ProfileUpdate</ProfileWebScreen>
+				<ProfileMobileScreen>DefaultMobile-ProfileUpdate</ProfileMobileScreen>
 				<override_links>1</override_links>
 			</gigya_raas_conf>
     </gigya_login>
@@ -323,9 +326,51 @@
     <gigya_r_and_r>
       <gigya_r_and_r_conf>
         <enable>1</enable>
-        <containerID>gigyaRatings</containerID>
+        <containerID>customer-reviews</containerID>
         <scope>both</scope>
       </gigya_r_and_r_conf>
     </gigya_r_and_r>
+    <gigya_followbar>
+        <gigya_followbar_conf>
+            <enable>0</enable>
+            <containerID>gigyaFollowbar</containerID>
+            <layout>horizontal</layout>
+            <iconSize>32</iconSize>
+            <buttons>
+[
+    {
+    "provider": "facebook",
+    "actionURL": "https://www.facebook.com/gigya",
+    "action": "dialog"
+    },
+    {
+    "provider": "twitter",
+    "followUsers": "gigya, gigyaDev",
+    "action": "dialog"
+    },
+    {
+    "provider": "googleplus",
+    "actionURL": "https://plus.google.com/107788669599113247501/posts",
+    "action": "window"
+    },
+    {
+    "provider": "linkedin",
+    "actionURL": "http://www.linkedin.com/company/gigya",
+    "action": "window"
+    },
+    {
+    "provider": "rss",
+    "actionURL": "http://blog.gigya.com/feed/",
+    "action": "window"
+    },
+    {
+    "provider": "email",
+    "confirmationText":"Thank you for following us",
+    "action": "dialog"
+    }
+]
+            </buttons>
+        </gigya_followbar_conf>
+    </gigya_followbar>
   </default>
 </config>

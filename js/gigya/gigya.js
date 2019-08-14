@@ -1,8 +1,13 @@
 /*
  *gigya functions
+ * Test
  */
 var gigyaFunctions = gigyaFunctions || {};
 var gigyaCache = {};
+//baseUrl = set on head.php
+/**
+ * create ajax request to loginController.login action
+ */
 gigyaFunctions.login = function (response) {
     gigyaCache.uInfo = response;
     new Ajax.Request(baseUrl + 'gigyalogin/login/login', {
@@ -30,6 +35,10 @@ gigyaFunctions.login = function (response) {
                     case 'moreInfo':
                         gigyaFunctions.showMoreInfoForm(trans.responseJSON.html);
                         //gigyaFunctions.moreInfoSubmit();
+                        break;
+                    case 'loginFailed':
+                        gigya.socialize.logout();
+                    //    console.log(trans.responseJSON.message);
                         break;
                 }
             }
@@ -86,7 +95,7 @@ gigyaFunctions.RaaS.profileEdit = function (data) {
 }
 
 gigyaFunctions.RaaS.loginScreens = function (event) {
-    var params = gigyaSettings.RaaS;
+    var params = gigyaMageSettings.RaaS;
     if (!params.raas_login_div_id.length === 0) {
         gigya.accounts.showScreenSet(JSON.parse('{"screenSet": "' + params.WebScreen + '", "containerID": "' + params.raas_login_div_id + '" , "mobileScreenSet":"' + params.MobileScreen + '", "startScreen":"' + params.LoginScreen + '"}'));
     } else {
@@ -96,7 +105,7 @@ gigyaFunctions.RaaS.loginScreens = function (event) {
 }
 
 gigyaFunctions.RaaS.registerScreens = function (event) {
-    var params = gigyaSettings.RaaS;
+    var params = gigyaMageSettings.RaaS;
     if (!params.raas_register_div_id === 0) {
         gigya.accounts.showScreenSet(JSON.parse('{"screenSet":"' + params.WebScreen + '", "containerID":"' + params.raas_register_div_id + '", "mobileScreenSet":"' + params.MobileScreen + '", "startScreen": "' + params.RegisterScreen + '"}'));
     } else {
@@ -107,7 +116,7 @@ gigyaFunctions.RaaS.registerScreens = function (event) {
 
 gigyaFunctions.RaaS.profileScreens = function (event) {
     if (gigyaFunctions.RaaS.loggedIn){
-        var params = gigyaSettings.RaaS;
+        var params = gigyaMageSettings.RaaS;
         var jsonParams = {};
         if (!params.raas_profile_div_id === 0) {
             jsonParams = JSON.parse('{"screenSet":"' + params.ProfileWebScreen + '", "containerID":"' + params.raas_profile_div_id + '", "mobileScreenSet:"' + params.ProfileMobileScreen + '", "startScreen": "' + params.ProfileWebScreen + '"}');
@@ -127,7 +136,7 @@ gigyaFunctions.RaaS.profileScreens = function (event) {
 }
 
 gigyaFunctions.RaaS.resetPass = function () {
-    var params = gigyaSettings.RaaS;
+    var params = gigyaMageSettings.RaaS;
     var jsonParams = {};
     jsonParams = JSON.parse('{"screenSet":"' + params.ProfileWebScreen + '", "mobileScreenSet":"' + params.ProfileMobileScreen + '", "startScreen": "gigya-change-password-screen"}');
     gigya.accounts.showScreenSet(jsonParams);
@@ -137,7 +146,7 @@ gigyaFunctions.RaaS.resetPass = function () {
 
 gigyaFunctions.RaaS.accountEmbed = function () {
     if ( typeof  $$('body.customer-account-edit')[0] != 'undefined') {
-        var params = gigyaSettings.RaaS;
+        var params = gigyaMageSettings.RaaS;
         var jsonParams = JSON.parse('{"screenSet":"' + params.ProfileWebScreen + '", "mobileScreenSet":"' + params.ProfileMobileScreen + '", "containerID": "form-validate"}');
         gigya.accounts.showScreenSet(jsonParams);
     }
@@ -185,6 +194,7 @@ gigyaFunctions.RaaS.checkLoggedIn = function (response) {
 }
 
 gigyaFunctions.logout = function (evData) {
+    console.log('logout!');
     if (typeof evData.source !== 'undefined' && evData.source == "showCommentsUI") {
         new Ajax.Request(baseUrl + 'gigyalogin/login/logout', {
             method: 'get',
@@ -394,7 +404,9 @@ gigyaFunctions.goToReviews = function (eventObj) {
         document.location = eventObj.context.reviewUrl;
     }
 };
-
+/*
+ * Update Magento after review submitted
+ */
 gigyaFunctions.postReview = function (eventObj) {
     var ratings = [],
         r = eventObj.ratings._overall;
@@ -407,7 +419,11 @@ gigyaFunctions.postReview = function (eventObj) {
         nickname: eventObj.user.firstName,
         title: eventObj.commentTitle,
         detail: eventObj.commentText,
-        ratings: ratings
+        ratings: ratings,
+        user: eventObj.user.UID,
+        categoryID: eventObj.categoryID,
+        streamID: eventObj.streamID,
+        commentID: eventObj.comment.ID
     };
     var reviewsUrl = baseUrl + 'gigyareviews/reviews/post',
         id = '',
@@ -418,16 +434,27 @@ gigyaFunctions.postReview = function (eventObj) {
     if (category = gigyaFunctions.getUrlParam('category')) {
         reviewsUrl += '/category/' + category;
     }
+
     new Ajax.Request(reviewsUrl, {
             parameters: {json: JSON.stringify(toPost)},
             onSuccess: function (trans) {
                 //TODO: add success/error handeling
+                if( trans.status == 200 ) {
+                    // success
+                } else {
+                    console.log('review failed to submit.' );
+                }
             }
         }
     );
 
 
 };
+
+/*
+ * magento pulls native reviews, if gigya reviews is enabled then gigya substitutes magento reviews, but gigya keeps updating magento native reviews.
+ *
+ */
 gigyaFunctions.RnR = function (settings) {
     if ($$('form table.ratings-table').length > 0) {
         var table = $('product_addtocart_form').select('table.ratings-table');
@@ -454,7 +481,7 @@ gigyaFunctions.RnR = function (settings) {
         privacy: settings.privacy,
         onCommentSubmitted: gigyaFunctions.postReview,
         userAction: ua,
-        version: settings.version
+        version : settings.version
     };
     gigya.comments.showRatingUI(settings);
     gigya.comments.showCommentsUI(reviews);
@@ -490,16 +517,18 @@ gigyaFunctions.getUrlParam = function (param) {
 }
 
 /*
- * register events
+ * Register events
+ * Listen to onbLogin / onLogout events returned from Gigya
+ * fire social or Raas login/logout callback functions
  */
 function gigyaRegister() {
     if (typeof gigya !== 'undefined') {
-        if (gigyaSettings.userMode === 'raas') {
+        if (gigyaMageSettings.userMode === 'raas') {
             gigya.socialize.addEventHandlers({
                 onLogin: gigyaFunctions.RaaS.login,
                 onLogout: gigyaFunctions.logout
             });
-        } else if (gigyaSettings.userMode === 'social') {
+        } else if (gigyaMageSettings.userMode === 'social') {
         gigya.socialize.addEventHandlers({
             onLogin: gigyaFunctions.login,
             onLogout: gigyaFunctions.logout
@@ -510,9 +539,13 @@ function gigyaRegister() {
 
 gigyaRegister();
 
+/*
+   * On document load, loop through gigyaMageSettings object, and fire gigya functions accordingly
+   *
+ */
 document.observe("dom:loaded", function () {
-    if (typeof gigyaSettings !== 'undefined') {
-        $H(gigyaSettings).each(function (plugin) {
+    if (typeof gigyaMageSettings !== 'undefined') {
+        $H(gigyaMageSettings).each(function (plugin) {
             delete plugin.value.enable;
             //var a = JSON.parse(plugin.value);
             switch (plugin.key) {
@@ -547,6 +580,7 @@ document.observe("dom:loaded", function () {
                     gigyaFunctions.ratings(plugin.value);
                     break;
                 case 'RnR':
+                    console.log('rnr');
                     gigyaFunctions.RnR(plugin.value);
                     break;
                 case 'logout':
@@ -555,6 +589,8 @@ document.observe("dom:loaded", function () {
                 case 'RaaS':
                     gigyaFunctions.RaaS.init(plugin.value);
                     break;
+                case 'followbar':
+                    gigya.socialize.showFollowBarUI(plugin.value);
             }
         });
     }
