@@ -1,8 +1,0 @@
-[29-Oct-2012 14:03:59 UTC] PHP Parse error:  syntax error, unexpected T_STRING, expecting T_FUNCTION in Share.php on line 8
-[29-Oct-2012 14:39:16 UTC] PHP Parse error:  syntax error, unexpected T_RETURN in Share.php on line 27
-[31-Oct-2012 14:27:56 UTC] PHP Parse error:  syntax error, unexpected T_STRING, expecting T_FUNCTION in Gamification/notifications.php on line 8
-[31-Oct-2012 14:40:51 UTC] PHP Fatal error:  Can't use function return value in write context in Gamification/Notifications.php on line 11
-[05-Nov-2012 12:32:39 UTC] PHP Parse error:  syntax error, unexpected '}' in Ratings.php on line 12
-[05-Dec-2012 14:08:16 UTC] PHP Parse error:  syntax error, unexpected ',' in Share.php on line 17
-[05-Dec-2012 14:13:02 UTC] PHP Parse error:  syntax error, unexpected ',' in Share.php on line 17
-[10-Dec-2012 15:29:48 UTC] PHP Parse error:  syntax error, unexpected T_CONSTANT_ENCAPSED_STRING in Share.php on line 12

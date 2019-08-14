@@ -14,7 +14,7 @@ class Gigya_Social_Block_Html_Head extends Mage_Page_Block_Html_Head {
         'enabledProviders' => (Mage::getStoreConfig('gigya_global/gigya_global_conf/providers') !== '') ? Mage::getStoreConfig('gigya_global/gigya_global_conf/providers') : '*',
         'lang' => Mage::getStoreConfig('gigya_global/gigya_global_conf/laguages'),
         'sessionExpiration' => (int) Mage::getStoreConfig('web/cookie/cookie_lifetime'),
-        'connectWithoutLoginBehavior' => Mage::getStoreConfig('gigya_login/gigya_login_conf/loginBehavior'),
+        'connectWithoutLoginBehavior' => Mage::getStoreConfig('gigya_global/gigya_global_conf/loginBehavior'),
       );
       $this->_data['items']['js/gigya'] = array(
         'type' => 'external_js',
@@ -33,14 +33,23 @@ class Gigya_Social_Block_Html_Head extends Mage_Page_Block_Html_Head {
         );
       }
       // Add base url to JS
+      $userMode = Mage::getStoreConfig('gigya_login/gigya_user_management/login_modes');
       $this->_data['items']['js/baseUrl'] = array(
         'type' => 'inline_js',
         'name' => 'baseUrl',
-        'params' => 'var baseUrl = "' . Mage::getBaseUrl() . '";',
         'if' => '',
-        'cond' => ''
+        'cond' => '',
+        'params' => 'var baseUrl = "' . Mage::getBaseUrl() . '",
+          gigyaSettings = gigyaSettings || {};
+          gigyaSettings.userMode = "' . $userMode . '";'
       );
+        if ($userMode == "raas") {
+            $this->_data['items']['js/baseUrl']['params'] .=  'gigyaSettings.RaaS = ' . Mage::helper('Gigya_Social')->getPluginConfig('gigya_login/gigya_raas_conf') . ';';
+        }
+    } else {
+        parent::_construct();
     }
+
   }
 
   protected function _separateOtherHtmlHeadElements(&$lines, $itemIf, $itemType, $itemParams, $itemName, $itemThe) {
@@ -97,7 +106,9 @@ class Gigya_Social_Block_Html_Head extends Mage_Page_Block_Html_Head {
         continue;
       }
       if (!empty($if)) {
+          if (strpos($if, "><!-->") == false) {
         $html .= '<!--[if ' . $if . ']>' . "\n";
+          }
       }
 
       // static and skin css
@@ -120,7 +131,9 @@ class Gigya_Social_Block_Html_Head extends Mage_Page_Block_Html_Head {
 
 
       if (!empty($if)) {
+          if (strpos($if, "><!-->") == false) {
         $html .= '<![endif]-->' . "\n";
+          }
       }
     }
     return $html;

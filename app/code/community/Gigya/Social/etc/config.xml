@@ -2,7 +2,7 @@
 <config>
   <modules>
     <Gigya_Social>
-      <version>0.1.0</version>
+      <version>3.0.0</version>
     </Gigya_Social>
   </modules>
   <frontend>
@@ -57,6 +57,21 @@
             <class>Gigya_Social_Model_Cart_Observer</class>
             <method>addOrderShareUi</method>
           </gigya_share_action>
+            <gigya_counters>
+                <type>singleton</type>
+                <class>Gigya_Social_Model_Cart_Observer</class>
+                <method>incCounters</method>
+            </gigya_counters>
+            <gigya_gmNotify>
+                <type>singleton</type>
+                <class>Gigya_Social_Model_Cart_Observer</class>
+                <method>notifyGmAction</method>
+            </gigya_gmNotify>
+            <gigya_reviewRemainder>
+                <type>singleton</type>
+                <class>Gigya_Social_Model_Cart_Observer</class>
+                <method>syncPurchaseToGigya</method>
+            </gigya_reviewRemainder>
         </observers>
       </checkout_onepage_controller_success_action>
     </events>
@@ -75,11 +90,18 @@
           <frontName>gigyareviews</frontName>
         </args>
       </reviews>
+        <accountEdit>
+            <use>standard</use>
+            <args>
+                <module>Gigya_Social</module>
+                <frontName>gigyaAccount</frontName>
+            </args>
+        </accountEdit>
     </routers>
     <layout>
       <updates>
         <Gigya_Social>
-          <file>gigya.xml</file>
+          <file>aagigya.xml</file> <!-- so we would be loaded last -->
         </Gigya_Social>
       </updates>
     </layout>
@@ -97,11 +119,44 @@
       <page>
         <rewrite>
           <html_head>Gigya_Social_Block_Html_Head</html_head>
+          <template_links>Gigya_Social_Block_Template_Links</template_links>
         </rewrite>
       </page>
+<!--        <customer>
+            <rewrite>
+                <account_dashboard_info>Gigya_Social_Block_Template_Info</account_dashboard_info>
+            </rewrite>
+        </customer>-->
     </blocks>
     <events>
     </events>
+      <models>
+          <Gigya_Social>
+              <class>Gigya_Social_Model</class>
+              <resourceModel>Gigya_Social_mysql4</resourceModel>
+          </Gigya_Social>
+      </models>
+      <resources>
+          <Gigya_Social_setup>
+              <setup>
+                  <module>Gigya_Social</module>
+                  <class>Mage_Customer_Model_Entity_Setup</class>
+              </setup>
+              <connection>
+                  <use>core_setup</use>
+              </connection>
+          </Gigya_Social_setup>
+          <Gigya_Social_write>
+              <connection>
+                  <use>core_write</use>
+              </connection>
+          </Gigya_Social_write>
+          <Gigya_Social_read>
+              <connection>
+                  <use>core_read</use>
+              </connection>
+          </Gigya_Social_read>
+      </resources>
   </global>
   <adminhtml>
     <events>
@@ -154,6 +209,13 @@
         </admin>
       </resources>
     </acl>
+		<layout>
+			<updates>
+				<Gigya_Social>
+					<file>gigya_admin.xml</file>
+				</Gigya_Social>
+			</updates>
+		</layout>
   </adminhtml>
   <!--default values from admin sections-->
   <default>
@@ -163,15 +225,18 @@
         <dataCenter>us1.gigya.com</dataCenter>
         <providers>*</providers>
         <laguages>en</laguages>
+        <loginBehavior>loginExistingUser</loginBehavior>
         <google_sa>0</google_sa>
+        <debug_log>0</debug_log>
       </gigya_global_conf>
     </gigya_global>
     <gigya_login>
+			<gigya_user_management>
+				<login_modes>social</login_modes>
+			</gigya_user_management>
       <gigya_login_conf>
-        <enable>1</enable>
         <buttonsStyle>standart</buttonsStyle>
         <showTermsLink>0</showTermsLink>
-        <loginBehavior>loginExistingUser</loginBehavior>
         <containerID>gigyaLogin</containerID>
         <width>210</width>
         <height>110</height>
@@ -184,6 +249,15 @@
         <showTermsLink>0</showTermsLink>
         <showEditLink>1</showEditLink>
       </gigya_link_accounts>
+			<gigya_raas_conf>
+				<WebScreen>Login-web</WebScreen>
+				<MobileScreen>Mobile-login</MobileScreen>
+				<LoginScreen>gigya-login-screen</LoginScreen>
+				<RegisterScreen>gigya-register-screen</RegisterScreen>
+				<ProfileWebScreen>Profile-web</ProfileWebScreen>
+				<ProfileMobileScreen>Mobile-profile</ProfileMobileScreen>
+				<override_links>1</override_links>
+			</gigya_raas_conf>
     </gigya_login>
     <gigya_share>
       <gigya_sharebar>
@@ -243,6 +317,7 @@
         <notifications>0</notifications>
         <period>7days</period>
         <totalCount>12</totalCount>
+        <purchaseAction>0</purchaseAction>
       </gigya_gamification_conf>
     </gigya_gamification>
     <gigya_r_and_r>
