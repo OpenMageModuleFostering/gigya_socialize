@@ -1,0 +1,16 @@
+{
+    "name": "OpenMageModuleFostering/Gigya_Socialize",
+    "type": "magento-module",
+    "license": "Gigya-License",
+    "homepage": "",
+    "description": "Create a completely social shopping experience with Gigya’s Magento Integration Cartridge",
+    "authors": [
+    {
+        "name": "Yaniv Aran-Shamir",
+        "email": "info@gigya-inc.com"
+    }
+],
+    "suggest": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}
