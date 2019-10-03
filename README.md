@@ -1,3 +1,5 @@
+
+
 ## Original Package Description
 
 Create a completely social shopping experience with Gigy's Magento Integration Cartridge
